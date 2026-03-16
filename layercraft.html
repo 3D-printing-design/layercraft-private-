@@ -2,8 +2,32 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Layercraft 3D Print Studio</title>
+
+<!-- PWA / Add to Home Screen -->
+<meta name="application-name" content="Layercraft 3D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Layercraft 3D">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e0e0e">
+<meta name="description" content="Layercraft 3D Print Studio — browse, order and customise 3D prints delivered to your door.">
+
+<!-- Open Graph (for sharing on WhatsApp, Facebook etc) -->
+<meta property="og:title" content="Layercraft 3D Print Studio">
+<meta property="og:description" content="Browse our catalogue of 3D prints or submit a custom order. Fast UK delivery.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://layercraft.onrender.com">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- Apple touch icons (home screen icon on iPhone/iPad) -->
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
@@ -2481,6 +2505,80 @@ async function loadCatalogue(){
       renderProducts();
     }
   }catch(e){/* stay with local demo catalogue */}
+}
+
+// ── PWA INSTALL PROMPT ───────────────────────────────────────
+let pwaInstallEvent = null;
+
+// Capture the install prompt event
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  pwaInstallEvent = e;
+  // Show our custom install banner after 3 seconds
+  setTimeout(showInstallBanner, 3000);
+});
+
+function showInstallBanner() {
+  if (!pwaInstallEvent) return;
+  if (sessionStorage.getItem('pwa_banner_dismissed')) return;
+  const existing = document.getElementById('pwaBanner');
+  if (existing) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'pwaBanner';
+  banner.style.cssText = `
+    position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+    width:calc(100% - 32px);max-width:420px;
+    background:#0e0e0e;color:#fff;border-radius:12px;
+    padding:14px 16px;display:flex;align-items:center;gap:12px;
+    z-index:999;box-shadow:0 8px 32px rgba(0,0,0,.35);
+    font-family:'DM Sans',sans-serif;font-size:13px;
+    animation:slideUp .3s ease;
+  `;
+  banner.innerHTML = `
+    <div style="width:36px;height:36px;background:#1a1a1a;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><polygon points="8,1 15,5 15,11 8,15 1,11 1,5" stroke="white" stroke-width="1.4"/><polygon points="8,5 12,7 12,10 8,12 4,10 4,7" fill="white" opacity=".6"/></svg>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-weight:600;font-size:13px">Add to your home screen</div>
+      <div style="font-size:11px;color:#999;margin-top:1px">Quick access to Layercraft 3D</div>
+    </div>
+    <button onclick="installPWA()" style="background:#fff;color:#0e0e0e;border:none;border-radius:7px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;font-family:inherit">Add</button>
+    <button onclick="dismissInstallBanner()" style="background:transparent;border:none;color:#666;cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0">×</button>
+  `;
+
+  // Add slide up animation
+  const style = document.createElement('style');
+  style.textContent = '@keyframes slideUp{from{transform:translateX(-50%) translateY(100px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}';
+  document.head.appendChild(style);
+
+  document.body.appendChild(banner);
+}
+
+async function installPWA() {
+  if (!pwaInstallEvent) return;
+  pwaInstallEvent.prompt();
+  const { outcome } = await pwaInstallEvent.userChoice;
+  if (outcome === 'accepted') {
+    toast('Layercraft 3D added to your home screen!');
+  }
+  dismissInstallBanner();
+  pwaInstallEvent = null;
+}
+
+function dismissInstallBanner() {
+  const banner = document.getElementById('pwaBanner');
+  if (banner) banner.remove();
+  sessionStorage.setItem('pwa_banner_dismissed', '1');
+}
+
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Service worker registration failed silently — app still works
+    });
+  });
 }
 
 // ── INIT ──────────────────────────────────────────────────────
