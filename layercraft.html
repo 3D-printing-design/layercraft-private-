@@ -1872,6 +1872,10 @@ function openOrderDetail(id){
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="5" width="12" height="7" rx="1.5"/><path d="M5 5V2h6v3M4 12H2v2h12v-2h-2M5 9h6"/></svg>
         Print postal label →
       </button>
+      <button class="btn-full-ghost" style="margin-top:6px;color:var(--red);border-color:#f09595;display:flex;align-items:center;justify-content:center;gap:7px" onclick="deleteOrder('${o.id}')">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 4h10M6 4V2h4v2M5 4v9h6V4"/><path d="M7 7v4M9 7v4"/></svg>
+        Delete order
+      </button>
     </div>`;
   document.getElementById('detailOverlay').classList.add('open');
 }
@@ -1905,7 +1909,23 @@ function openCustomDetail(id){
     </div>`;
   document.getElementById('detailOverlay').classList.add('open');
 }
-async function saveStatus(id){
+async function deleteOrder(id){
+  const o=ORDERS.find(x=>x.id===id);
+  if(!o)return;
+  if(!confirm(`Delete order ${id} for ${o.cust}?\n\nThis cannot be undone.`))return;
+  try{
+    await apiFetch(`/api/orders/${id}`,{method:'DELETE'});
+  }catch(e){
+    // If backend not connected, remove locally
+  }
+  // Remove from local array
+  const idx=ORDERS.findIndex(x=>x.id===id);
+  if(idx>-1)ORDERS.splice(idx,1);
+  closeDetail();
+  renderOrders();
+  renderStatusBreak();
+  toast(`Order ${id} deleted`);
+}
   const sel=document.getElementById('statusSel');
   if(!sel)return;
   const newStatus=sel.value;

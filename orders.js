@@ -209,4 +209,18 @@ router.get('/stats/summary', requireAuth, async (req, res) => {
   }
 });
 
+// ── DELETE /api/orders/:id ────────────────────────────────────
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete order' });
+  }
+});
+
 module.exports = router;
